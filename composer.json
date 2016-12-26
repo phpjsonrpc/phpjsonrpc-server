@@ -1,0 +1,36 @@
+{
+  "name": "phpjsonrpc/server",
+  "description": "JSON RPC server implementation based on JSON-RPC 2.0 Specification.",
+  "keywords": [
+    "json",
+    "rpc",
+    "server",
+    "api"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Adam Balogh",
+      "email": "adam.balogh.craft@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.4",
+    "league/booboo": "^1.0.0",
+    "justinrainbow/json-schema": "^4.0.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4.8",
+    "squizlabs/php_codesniffer": "~2.3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "PhpJsonRpc\\Server\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "PhpJsonRpc\\Server\\Stub\\": "stub/"
+    }
+  }
+}
