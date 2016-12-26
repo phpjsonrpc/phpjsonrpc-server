@@ -96,7 +96,7 @@ class RequestBuilder
     {
         $message = 'Unknown error';
 
-        switch (json_last_error()) {
+        switch ($jsonLastError) {
             case JSON_ERROR_NONE:
                 $message = 'No errors';
                 break;
