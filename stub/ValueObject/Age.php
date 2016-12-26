@@ -5,7 +5,7 @@ namespace PhpJsonRpc\Server\Stub\ValueObject;
 class Age
 {
     /**
-     * @var string
+     * @var int
      */
     private $value;
 
