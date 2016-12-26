@@ -3,10 +3,10 @@
 namespace PhpJsonRpc\Server\Service\Method;
 
 use PhpJsonRpc\Server\Request\Params;
-use PhpJsonRpc\Server\Service\Method\Contract\Method;
+use PhpJsonRpc\Server\Service\Method\Contract;
 use PhpJsonRpc\Server\Service\Method\Exception\NotCallable;
 
-abstract class AbstractMethod implements Method
+abstract class AbstractMethod implements Contract\Method
 {
     /**
      * @var string
