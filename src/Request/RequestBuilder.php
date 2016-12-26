@@ -29,7 +29,7 @@ class RequestBuilder
             throw new ParseError(json_last_error_msg());
         }
 
-        if ($this->isBatchRequest() && empty($this->decodedJson())) {
+        if ($this->isBatchRequest() && !$this->decodedJson()) {
             throw new InvalidRequest;
         }
     }
