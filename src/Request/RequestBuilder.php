@@ -23,10 +23,11 @@ class RequestBuilder
      */
     public function __construct($jsonRpcMessage)
     {
-        $this->decodedJson = json_decode($jsonRpcMessage);
+        $this->decodedJson  = json_decode($jsonRpcMessage);
+        $jsonLastError      = json_last_error();
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new ParseError(json_last_error_msg());
+        if ($jsonLastError !== JSON_ERROR_NONE) {
+            throw new ParseError($this->buildJsonErrorMessage($jsonLastError));
         }
 
         if ($this->isBatchRequest() && !$this->decodedJson()) {
@@ -84,5 +85,38 @@ class RequestBuilder
         $validator->check($jsonDecodedMessage, (object)['$ref' => 'file://' . __DIR__ . self::JSON_SCHEMA_PATH]);
 
         return $validator;
+    }
+
+    /**
+     * @param int $jsonLastError
+     *
+     * @return string
+     */
+    protected function buildJsonErrorMessage($jsonLastError)
+    {
+        $message = 'Unknown error';
+
+        switch (json_last_error()) {
+            case JSON_ERROR_NONE:
+                $message = 'No errors';
+                break;
+            case JSON_ERROR_DEPTH:
+                $message = 'Maximum stack depth exceeded';
+                break;
+            case JSON_ERROR_STATE_MISMATCH:
+                $message = 'Underflow or the modes mismatch';
+                break;
+            case JSON_ERROR_CTRL_CHAR:
+                $message = 'Unexpected control character found';
+                break;
+            case JSON_ERROR_SYNTAX:
+                $message = 'Syntax error, malformed JSON';
+                break;
+            case JSON_ERROR_UTF8:
+                $message = 'Malformed UTF-8 characters, possibly incorrectly encoded';
+                break;
+        }
+
+        return $message;
     }
 }
