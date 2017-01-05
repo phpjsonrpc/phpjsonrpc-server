@@ -130,11 +130,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $service = new Service('json-rpc-2.0/v1');
 
-        $this->setExpectedException('PhpJsonRpc\Server\Error\InvalidRequest');
-
-        $service->dispatch(
+        /** @var UnsuccessfulResponse $response */
+        $response = $service->dispatch(
             '[]'
         );
+
+        $this->assertEquals(-32600, $response->error()->code());
     }
 
     /**
@@ -267,9 +268,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $service = new Service('json-rpc-2.0/v1');
 
-        $this->setExpectedException('\PhpJsonRpc\Server\Error\ParseError');
+        /** @var UnsuccessfulResponse $response */
+        $response = $service->dispatch('bla bla bla');
 
-        $service->dispatch('bla bla bla');
+        $this->assertEquals(-32700, $response->error()->code());
     }
 
     /**
@@ -280,11 +282,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $service = new Service('json-rpc-2.0/v1');
 
-        $this->setExpectedException('\PhpJsonRpc\Server\Error\InvalidRequest');
-
-        $service->dispatch(
+        /** @var UnsuccessfulResponse $response */
+        $response = $service->dispatch(
             '{"jsonrpc": "2.0", "metXhod": "welcome", "params": {"name": "Adam", "age": 29}, "id": 1}'
         );
+
+        $this->assertEquals(-32600, $response->error()->code());
     }
 
     /**
@@ -295,10 +298,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $service = new Service('json-rpc-2.0/v1');
 
-        $this->setExpectedException('\PhpJsonRpc\Server\Error\MethodNotFound');
-
-        $service->dispatch(
+        $response = $service->dispatch(
             '{"jsonrpc": "2.0", "method": "welcome", "params": {"name": "Adam", "age": 29}, "id": 1}'
         );
+
+        /** @var UnsuccessfulResponse $response */
+        $this->assertEquals(-32601, $response->error()->code());
     }
 }

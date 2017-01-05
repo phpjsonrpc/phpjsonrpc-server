@@ -12,6 +12,8 @@ use PhpJsonRpc\Server\Request\NotificationRequest;
 use PhpJsonRpc\Server\Response\SuccessfulResponse;
 use PhpJsonRpc\Server\Response\UnsuccessfulResponse;
 use PhpJsonRpc\Server\Service\Method\Contract\Method;
+use PhpJsonRpc\Server\Response\Contract\ErrorFormatter;
+use PhpJsonRpc\Server\Response\ErrorFormatter\DefaultErrorFormatter;
 
 class Service
 {
@@ -21,54 +23,57 @@ class Service
     protected $endpoint;
 
     /**
+     * @var ErrorFormatter
+     */
+    protected $errorFormatter;
+
+    /**
      * @var Method[]
      */
     protected $methods = [];
 
     /**
      * @param string $endpoint
+     * @param ErrorFormatter|null $errorFormatter
      */
-    public function __construct($endpoint)
+    public function __construct($endpoint, ErrorFormatter $errorFormatter = null)
     {
-        $this->endpoint = $endpoint;
+        $this->endpoint         = $endpoint;
+        $this->errorFormatter   = $errorFormatter ? $errorFormatter : new DefaultErrorFormatter;
     }
 
     /**
      * @param string $message
-     * @return AbstractResponse[]|SuccessfulResponse|null
+     *
+     * @return AbstractResponse[]|AbstractResponse|null
      *
      * @throws \Exception
      */
     public function dispatch($message)
     {
-        $requestBuilder = new RequestBuilder($message);
-
-        if ($requestBuilder->isBatchRequest()) {
-            $responses = [];
-
-            foreach ($requestBuilder->decodedJson() as $messageObject) {
-                try {
-                    $request = $requestBuilder->buildRequest($messageObject);
-                } catch (\Exception $e) {
-                    $responses[] = new UnsuccessfulResponse(null, Error::create($e));
-                    continue;
-                }
-
-                if ($request instanceof Request) {
-                    try {
-                        $responses[] = $this->buildResponse($request);
-                    } catch (\Exception $e) {
-                        $responses[] = new UnsuccessfulResponse($request->id(), Error::create($e));
-                    }
-                }
-            }
-
-            return $responses ? : null;
+        try {
+            $requestBuilder = new RequestBuilder($message);
+        } catch (\Exception $e) {
+            return new UnsuccessfulResponse(null, new Error($e, $this->errorFormatter));
         }
 
-        return $this->buildResponse(
-            $requestBuilder->buildRequest($requestBuilder->decodedJson())
-        );
+        if ($requestBuilder->isBatchRequest()) {
+            return $this->buildResponses($requestBuilder);
+        }
+
+        try {
+            $request = $requestBuilder->buildRequest($requestBuilder->decodedJson());
+        } catch (\Exception $e) {
+            return new UnsuccessfulResponse(null, new Error($e, $this->errorFormatter));
+        }
+
+        if ($request instanceof Request) {
+            try {
+                return $this->buildResponse($request);
+            } catch (\Exception $e) {
+                return new UnsuccessfulResponse($request->id(), new Error($e, $this->errorFormatter));
+            }
+        }
     }
 
     /**
@@ -112,6 +117,35 @@ class Service
     }
 
     /**
+     * @param RequestBuilder $requestBuilder
+     *
+     * @return AbstractResponse[]|null
+     */
+    protected function buildResponses(RequestBuilder $requestBuilder)
+    {
+        $responses = [];
+
+        foreach ($requestBuilder->decodedJson() as $messageObject) {
+            try {
+                $request = $requestBuilder->buildRequest($messageObject);
+            } catch (\Exception $e) {
+                $responses[] = new UnsuccessfulResponse(null, new Error($e, $this->errorFormatter));
+                continue;
+            }
+
+            if ($request instanceof Request) {
+                try {
+                    $responses[] = $this->buildResponse($request);
+                } catch (\Exception $e) {
+                    $responses[] = new UnsuccessfulResponse($request->id(), new Error($e, $this->errorFormatter));
+                }
+            }
+        }
+
+        return $responses ? : null;
+    }
+
+    /**
      * @param AbstractRequest $request
      *
      * @return null|SuccessfulResponse
@@ -135,6 +169,6 @@ class Service
             return new SuccessfulResponse($request->id(), $methodResult);
         }
 
-        return null; # notification request
+        return null;
     }
 }

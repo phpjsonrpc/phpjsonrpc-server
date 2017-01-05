@@ -16,7 +16,6 @@
   ],
   "require": {
     "php": ">=5.4",
-    "league/booboo": "^1.0.0",
     "justinrainbow/json-schema": "^4.0.0"
   },
   "require-dev": {

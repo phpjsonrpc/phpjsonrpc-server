@@ -2,8 +2,6 @@
 
 namespace PhpJsonRpc\Server\Server;
 
-use League\BooBoo\Runner as BooBooRunner;
-use PhpJsonRpc\Server\Server\Booboo\JsonFormatter;
 use PhpJsonRpc\Server\Service\Service as JsonRpcService;
 
 /**
@@ -14,20 +12,7 @@ class Server
     /**
      * @var JsonRpcService[]
      */
-    private $services = [];
-
-    /**
-     * @var BooBooRunner
-     */
-    private $boobooRunner;
-
-    /**
-     * @param BooBooRunner|null $boobooRunner
-     */
-    public function __construct(BooBooRunner $boobooRunner = null)
-    {
-        $this->boobooRunner = $boobooRunner ? : new BooBooRunner([new JsonFormatter(true)]);
-    }
+    protected $services = [];
 
     /**
      * @param JsonRpcService $jsonRpcService
@@ -43,16 +28,9 @@ class Server
      */
     public function handle($endpoint, $request)
     {
-        $this->boobooRunner->treatErrorsAsExceptions(true);
-        $this->boobooRunner->register();
-
         echo json_encode(
             $this->findService($endpoint)->dispatch($request)
         );
-
-        $this->boobooRunner->clearFormatters();
-        $this->boobooRunner->clearHandlers();
-        $this->boobooRunner->deregister();
     }
 
     /**

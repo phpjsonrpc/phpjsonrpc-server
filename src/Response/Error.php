@@ -2,59 +2,45 @@
 
 namespace PhpJsonRpc\Server\Response;
 
+use PhpJsonRpc\Server\Response\Contract\ErrorFormatter;
 use PhpJsonRpc\Server\Error\Exception\ExceptionWithData;
 
 class Error implements \JsonSerializable
 {
     /**
-     * @var int
+     * @var \Exception
      */
-    protected $code;
+    protected $exception;
 
     /**
-     * @var string
+     * @var ErrorFormatter
      */
-    protected $message;
-
-    /**
-     * @var mixed|null
-     */
-    protected $data;
-
-    /**
-     * @param int $code
-     * @param string $message
-     * @param mixed|null $data
-     */
-    public function __construct($code, $message, $data = null)
-    {
-        $this->code     = $code;
-        $this->message  = $message;
-        $this->data     = $data;
-    }
+    protected $errorFormatter;
 
     /**
      * @param \Exception $exception
-     *
-     * @return Error
+     * @param ErrorFormatter $errorFormatter
      */
-    public static function create(\Exception $exception)
+    public function __construct(\Exception $exception, ErrorFormatter $errorFormatter)
     {
-        $data = null;
-
-        if ($exception instanceof ExceptionWithData) {
-            $data = $exception->getData();
-        }
-
-        return new self($exception->getCode(), $exception->getMessage(), $data);
+        $this->exception        = $exception;
+        $this->errorFormatter   = $errorFormatter;
     }
 
     /**
-     * @return int
+     * @return \Exception
+     */
+    public function exception()
+    {
+        return $this->exception;
+    }
+
+    /**
+     * @return int|mixed
      */
     public function code()
     {
-        return $this->code;
+        return $this->exception()->getCode();
     }
 
     /**
@@ -62,7 +48,15 @@ class Error implements \JsonSerializable
      */
     public function message()
     {
-        return $this->message;
+        return $this->exception()->getMessage();
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasData()
+    {
+        return ($this->exception instanceof ExceptionWithData && $this->exception->getData());
     }
 
     /**
@@ -70,7 +64,9 @@ class Error implements \JsonSerializable
      */
     public function data()
     {
-        return $this->data;
+        if ($this->exception instanceof ExceptionWithData) {
+            return $this->exception->getData();
+        }
     }
 
     /**
@@ -78,15 +74,6 @@ class Error implements \JsonSerializable
      */
     public function jsonSerialize()
     {
-        $jsonSerializable = new \stdClass();
-
-        $jsonSerializable->code     = $this->code();
-        $jsonSerializable->message  = $this->message();
-
-        if (!is_null($this->data())) {
-            $jsonSerializable->data = $this->data();
-        }
-
-        return $jsonSerializable;
+        return $this->errorFormatter->formatError($this);
     }
 }
